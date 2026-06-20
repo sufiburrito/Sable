@@ -1,0 +1,9 @@
+# Stocks to refresh nightly on market days (one ticker per line).
+# Mode: chart-news-community (price action + news + community sentiment).
+# Runs at 11 PM IST after each trading day.
+# Lines starting with # are ignored, as are blank lines.
+#
+# Add your own NSE tickers below, one per line. Examples:
+# RELIANCE
+# TCS
+# INFY

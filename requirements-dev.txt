@@ -1,0 +1,6 @@
+# Dev/test tooling — NOT installed in the production container.
+# Install: pip3 install --no-cache-dir -r requirements-dev.txt
+# (also pulls in the runtime deps so tests can import the app)
+-r requirements.txt
+
+pytest>=9.0.3

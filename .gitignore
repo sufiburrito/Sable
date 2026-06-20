@@ -1,0 +1,45 @@
+# Secrets — never commit
+.env
+data/*token*.json
+
+# Your data (instance-local, never published). The directory skeleton ships empty
+# via a force-added .gitkeep in each; everything else here stays ignored.
+data/
+analysis/
+reports/
+requests/
+exports/
+insider_trades/
+intel_inbox/
+dalalstreet_morning/
+nightly-levels/
+stock portfolio/
+KNOWLEDGE_BASE/
+journal/vault/
+journal/charge_model.json
+datasets/datasets.db
+datasets/mmi/
+datasets/*.csv
+stocks/*.md
+!stocks/_TEMPLATE.md
+# Keep the empty runtime-dir skeleton (placeholders are force-added at build).
+!**/.gitkeep
+
+# Your personal context — copy CLAUDE.md.example → CLAUDE.md and customize
+CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Runtime artifacts
+*.log
+*.lock
+*.bak
+*.db
+results/
+.DS_Store

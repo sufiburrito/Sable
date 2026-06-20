@@ -1,0 +1,1773 @@
+/* ═══════════════════════════════════════════════════════════════
+   TradeCentral — "Void Console"
+
+   Aesthetic: High-end trading terminal floating in dark space.
+   Deep blacks, subtle grain texture, warm amber/copper accents.
+   Phosphor-screen glow. Data-dense but atmospheric.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+    /* Abyss palette — true blacks with blue undertones */
+    --bg-void:        #06060b;
+    --bg-deep:        #0b0b12;
+    --bg-surface:     #0f0f18;
+    --bg-elevated:    #161621;
+    --bg-hover:       #1c1c2a;
+    --bg-active:      #1a1a28;
+    --border:         #1e1e2e;
+    --border-accent:  #2e2e42;
+    --border-glow:    #3a3a55;
+
+    /* Text — warm whites, not blue-cold */
+    --text-primary:   #e4e0d8;
+    --text-secondary: #8c8a80;
+    --text-dim:       #4e4d48;
+    --text-muted:     #333330;
+
+    /* Accent — warm amber/copper instead of generic purple */
+    --accent:         #d4915c;
+    --accent-glow:    rgba(212, 145, 92, 0.25);
+    --accent-dim:     rgba(212, 145, 92, 0.08);
+    --accent-hover:   #c47d48;
+    --accent-text:    #e8b88a;
+
+    /* Signal colors — saturated for contrast on dark */
+    --buy:            #2dd4a0;
+    --buy-glow:       rgba(45, 212, 160, 0.15);
+    --buy-dim:        rgba(45, 212, 160, 0.08);
+    --sell:           #f06060;
+    --sell-glow:      rgba(240, 96, 96, 0.15);
+    --sell-dim:       rgba(240, 96, 96, 0.08);
+    --watch:          #e0c040;
+    --watch-glow:     rgba(224, 192, 64, 0.15);
+    --watch-dim:      rgba(224, 192, 64, 0.08);
+
+    /* MMI zones */
+    --mmi-extreme-fear: #2dd4a0;
+    --mmi-fear:         #e0c040;
+    --mmi-greed:        #e89040;
+    --mmi-extreme-greed:#f06060;
+
+    /* Typography */
+    --font-body:      'Outfit', sans-serif;
+    --font-mono:      'JetBrains Mono', monospace;
+}
+
+/* ─── RESET + BASE ──────────────────────────────────────────── */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle noise grain texture on the entire viewport */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+}
+
+/* ─── ANIMATIONS ────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 4px var(--accent-glow); }
+    50%      { box-shadow: 0 0 12px var(--accent-glow); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── HEADER ────────────────────────────────────────────────── */
+
+#header {
+    display: flex;
+    align-items: center;
+    height: 46px;
+    padding: 0 20px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    gap: 28px;
+    z-index: 10;
+    position: relative;
+    animation: fadeIn 0.4s ease;
+}
+
+/* Subtle warm glow along bottom edge */
+#header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--accent-glow) 30%,
+        rgba(212, 145, 92, 0.12) 50%,
+        var(--accent-glow) 70%,
+        transparent 100%
+    );
+}
+
+.header-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.brand-name {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--accent-text);
+}
+
+.brand-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-dim);
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+}
+
+/* ─── MMI BAR ───────────────────────────────────────────────── */
+
+.mmi-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    flex: 1;
+    justify-content: center;
+}
+
+.mmi-loading {
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+
+.mmi-value {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.mmi-zone {
+    padding: 3px 10px;
+    border-radius: 2px;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.mmi-zone.extreme-fear {
+    background: rgba(45, 212, 160, 0.15);
+    color: var(--mmi-extreme-fear);
+    box-shadow: 0 0 8px rgba(45, 212, 160, 0.1);
+}
+.mmi-zone.fear {
+    background: rgba(224, 192, 64, 0.15);
+    color: var(--mmi-fear);
+    box-shadow: 0 0 8px rgba(224, 192, 64, 0.1);
+}
+.mmi-zone.greed {
+    background: rgba(232, 144, 64, 0.15);
+    color: var(--mmi-greed);
+    box-shadow: 0 0 8px rgba(232, 144, 64, 0.1);
+}
+.mmi-zone.extreme-greed {
+    background: rgba(240, 96, 96, 0.15);
+    color: var(--mmi-extreme-greed);
+    box-shadow: 0 0 8px rgba(240, 96, 96, 0.1);
+}
+
+.mmi-delta {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.mmi-delta .up   { color: var(--buy); }
+.mmi-delta .down { color: var(--sell); }
+
+/* ─── TIMEFRAME BUTTONS ─────────────────────────────────────── */
+
+.header-controls {
+    flex-shrink: 0;
+}
+
+.timeframe-group {
+    display: flex;
+    gap: 1px;
+    background: var(--bg-void);
+    padding: 3px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+.tf-btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+}
+
+.tf-btn:hover {
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+}
+
+.tf-btn.active {
+    color: var(--bg-void);
+    background: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ─── MAIN LAYOUT ───────────────────────────────────────────── */
+
+.main-layout {
+    display: grid;
+    grid-template-columns: 184px 1fr 264px;
+    height: calc(100vh - 46px);
+    gap: 0;
+    background: var(--bg-void);
+}
+
+/* ─── STOCK SIDEBAR ─────────────────────────────────────────── */
+
+.stock-sidebar {
+    background: var(--bg-deep);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+}
+
+.sidebar-header, .panel-header {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Focus tabs — FG / ALL / BG toggle in the sidebar header */
+.focus-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-deep);
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.focus-tab {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.focus-tab:hover {
+    color: var(--text-secondary);
+}
+
+.focus-tab.active {
+    color: var(--accent-text);
+    background: var(--bg-elevated);
+}
+
+/* Background stocks appear dimmed in the "All" view */
+.stock-item.bg-stock {
+    opacity: 0.45;
+}
+
+.stock-item.bg-stock:hover {
+    opacity: 0.75;
+}
+
+.stock-list {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.stock-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.15s ease;
+    animation: fadeInUp 0.35s ease backwards;
+    position: relative;
+}
+
+/* Stagger the stock list items */
+.stock-item:nth-child(1)  { animation-delay: 0.02s; }
+.stock-item:nth-child(2)  { animation-delay: 0.04s; }
+.stock-item:nth-child(3)  { animation-delay: 0.06s; }
+.stock-item:nth-child(4)  { animation-delay: 0.08s; }
+.stock-item:nth-child(5)  { animation-delay: 0.10s; }
+.stock-item:nth-child(6)  { animation-delay: 0.12s; }
+.stock-item:nth-child(7)  { animation-delay: 0.14s; }
+.stock-item:nth-child(8)  { animation-delay: 0.16s; }
+.stock-item:nth-child(9)  { animation-delay: 0.18s; }
+.stock-item:nth-child(10) { animation-delay: 0.20s; }
+.stock-item:nth-child(11) { animation-delay: 0.22s; }
+.stock-item:nth-child(12) { animation-delay: 0.24s; }
+.stock-item:nth-child(13) { animation-delay: 0.26s; }
+.stock-item:nth-child(14) { animation-delay: 0.28s; }
+.stock-item:nth-child(15) { animation-delay: 0.30s; }
+
+.stock-item:hover {
+    background: var(--bg-hover);
+}
+
+.stock-item.active {
+    background: var(--bg-active);
+    border-left: 2px solid var(--accent);
+    padding-left: 12px;
+}
+
+/* Warm glow on active item */
+.stock-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(90deg, var(--accent-dim), transparent);
+    pointer-events: none;
+}
+
+.stock-ticker {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+
+.stock-item.active .stock-ticker {
+    color: var(--accent-text);
+}
+
+.stock-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.stock-levels-count {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+}
+
+.stock-belief {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--accent-text);
+    background: var(--accent-dim);
+    border: 1px solid rgba(212, 145, 92, 0.12);
+}
+
+/* ─── CHART AREA ────────────────────────────────────────────── */
+
+.chart-area {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Viewport vignette — subtle darkening at edges */
+.chart-area::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.chart-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 12px 20px 8px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 2;
+    animation: fadeIn 0.5s ease;
+}
+
+.chart-ticker {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.chart-price {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.chart-belief {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    color: var(--accent-text);
+    background: var(--accent-dim);
+    border: 1px solid rgba(212, 145, 92, 0.12);
+}
+
+/* HMM regime badge — compact display in chart header */
+.chart-regime {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg-elevated);
+}
+
+.regime-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.regime-name {
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+}
+
+.regime-prob {
+    color: var(--text-dim);
+}
+
+.regime-action {
+    color: var(--text-secondary);
+    font-size: 8px;
+    letter-spacing: 0.02em;
+}
+
+/* Regime legend — overlays the chart area in the top-left corner.
+   Shows 4 regime types with colored dots, names, and today's probability.
+   Toggled with the regime toolbar button. */
+.regime-legend {
+    position: absolute;
+    top: 52px;
+    left: 16px;
+    z-index: 10;
+    background: rgba(15, 15, 24, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: none;  /* don't block chart interactions */
+}
+
+.regime-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.regime-legend-row.current {
+    color: var(--text-primary);
+}
+
+.regime-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.regime-legend-name {
+    min-width: 60px;
+}
+
+.regime-legend-prob {
+    color: var(--text-dim);
+    font-size: 9px;
+    opacity: 0.7;
+}
+
+.regime-legend-row.current .regime-legend-prob {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+/* Monte Carlo simulation stats — compact display in chart header */
+.chart-sim-stats {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    margin-left: auto;  /* push to far right of header flex row */
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.sim-label {
+    color: var(--buy);
+    opacity: 0.5;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sim-range {
+    color: var(--text-secondary);
+}
+
+.sim-vol {
+    color: var(--text-dim);
+}
+
+.chart-container {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    z-index: 2;
+}
+
+.chart-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+}
+
+/* ─── ALERT PANEL (right side) ──────────────────────────────── */
+
+.alert-panel {
+    background: var(--bg-deep);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease 0.1s backwards;
+}
+
+.alert-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 0;
+}
+
+.alert-empty {
+    padding: 20px 14px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-align: center;
+    letter-spacing: 0.04em;
+}
+
+.alert-entry {
+    padding: 8px 14px 7px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    transition: background 0.12s ease;
+}
+
+.alert-entry:hover {
+    background: var(--bg-hover);
+}
+
+.alert-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 3px;
+}
+
+.alert-signal {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.alert-type {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+}
+
+.alert-type.buy {
+    color: var(--buy);
+    background: var(--buy-dim);
+    box-shadow: 0 0 6px var(--buy-glow);
+}
+.alert-type.sell {
+    color: var(--sell);
+    background: var(--sell-dim);
+    box-shadow: 0 0 6px var(--sell-glow);
+}
+.alert-type.watch {
+    color: var(--watch);
+    background: var(--watch-dim);
+    box-shadow: 0 0 6px var(--watch-glow);
+}
+
+.alert-price {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+.alert-time {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-left: auto;
+    letter-spacing: 0.02em;
+}
+
+.alert-message {
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ─── ALERT LEVELS LIST ─────────────────────────────────────── */
+
+.alert-levels-list {
+    overflow-y: auto;
+    padding: 2px 0;
+    flex: 1;
+}
+
+.level-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    transition: background 0.12s ease;
+}
+
+.level-entry:hover {
+    background: var(--bg-hover);
+}
+
+.level-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+}
+
+.level-price {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+.level-type {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.level-source {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    margin-left: auto;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ─── LEVEL DETAIL POPOVER ──────────────────────────────────── */
+/* Translucent tooltip for reading full alert messages           */
+
+.level-entry {
+    cursor: pointer;
+}
+
+.level-entry.selected {
+    background: var(--bg-active);
+    border-left: 2px solid var(--accent);
+    padding-left: 12px;
+}
+
+.level-popover {
+    width: 300px;
+    max-width: calc(100vw - 320px);
+    /* Solid fallback for browsers that don't support backdrop-filter */
+    background: #0d0d15;
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    z-index: 10000;
+    box-shadow:
+        0 0 1px rgba(212, 145, 92, 0.15),
+        0 4px 20px rgba(0, 0, 0, 0.7);
+    animation: slideIn 0.15s ease;
+    overflow: hidden;
+}
+
+.level-popover-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.level-popover-signal {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.level-popover-type {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+}
+
+.level-popover-type.buy {
+    color: var(--buy);
+    background: var(--buy-dim);
+}
+.level-popover-type.sell {
+    color: var(--sell);
+    background: var(--sell-dim);
+}
+.level-popover-type.watch {
+    color: var(--watch);
+    background: var(--watch-dim);
+}
+
+.level-popover-price {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.level-popover-range {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.level-popover-body {
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.level-popover-meta {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+}
+
+/* ─── ALERT CREATION POPOVER (in-chart) ────────────────────── */
+/* Replaces the old full-screen modal. Appears at click point,  */
+/* clamped within chart bounds. Chart blurs behind it.          */
+
+.chart-container.blurred .js-plotly-plot {
+    filter: blur(3px);
+    transition: filter 0.15s ease;
+}
+
+.alert-popover {
+    position: absolute;
+    z-index: 10000;
+    width: 280px;
+    background: #0d0d15;
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    box-shadow:
+        0 0 1px rgba(212, 145, 92, 0.2),
+        0 4px 20px rgba(0, 0, 0, 0.6);
+    animation: slideIn 0.15s ease;
+    overflow: hidden;
+    font-family: var(--font-mono);
+}
+
+/* Header: ticker + price */
+.ap-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.ap-ticker {
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--accent-text);
+    letter-spacing: 0.02em;
+}
+
+.ap-price {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+/* Type + confidence in one row */
+.ap-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+}
+
+.ap-type-group {
+    display: flex;
+    gap: 3px;
+}
+
+.ap-conf-group {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.ap-type-btn, .ap-conf-btn {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-deep);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.02em;
+}
+
+.ap-type-btn:hover, .ap-conf-btn:hover {
+    border-color: var(--border-accent);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+}
+
+.ap-type-btn.active.buy {
+    background: var(--buy-dim);
+    color: var(--buy);
+    border-color: var(--buy);
+    box-shadow: 0 0 8px var(--buy-glow);
+}
+.ap-type-btn.active.sell {
+    background: var(--sell-dim);
+    color: var(--sell);
+    border-color: var(--sell);
+    box-shadow: 0 0 8px var(--sell-glow);
+}
+.ap-type-btn.active.watch {
+    background: var(--watch-dim);
+    color: var(--watch);
+    border-color: var(--watch);
+    box-shadow: 0 0 8px var(--watch-glow);
+}
+.ap-conf-btn.active {
+    background: var(--accent);
+    color: var(--bg-void);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    font-weight: 700;
+}
+
+/* Note input */
+.ap-note {
+    display: block;
+    width: calc(100% - 24px);
+    margin: 0 12px 8px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 400;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.ap-note:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.ap-note::placeholder {
+    color: var(--text-dim);
+    font-weight: 300;
+}
+
+/* Nearby context: alerts and MAs close to clicked price */
+.ap-context {
+    padding: 6px 12px 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.ap-ctx-label {
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.ap-ctx-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+}
+
+.ap-ctx-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ap-ctx-dist {
+    font-size: 9px;
+    color: var(--text-dim);
+}
+
+/* Action buttons */
+.ap-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+}
+
+.ap-cancel, .ap-save {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.02em;
+}
+
+.ap-cancel {
+    background: var(--bg-deep);
+    color: var(--text-secondary);
+}
+
+.ap-cancel:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.ap-save {
+    background: var(--accent);
+    color: var(--bg-void);
+    border-color: var(--accent);
+    font-weight: 700;
+}
+
+.ap-save:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* ─── SCROLLBARS ────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-accent);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+/* ─── CSS CROSSHAIR (GPU-composited, no SVG redraws) ──────── */
+
+.crosshair-h, .crosshair-v {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.08s ease;
+    will-change: transform, opacity;
+}
+
+/* Horizontal line — full width, 1px tall */
+.crosshair-h {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(212, 145, 92, 0.35);
+    /* Dotted effect via repeating gradient */
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(212, 145, 92, 0.35) 0px,
+        rgba(212, 145, 92, 0.35) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+}
+
+/* Vertical line — full height, 1px wide */
+.crosshair-v {
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(212, 145, 92, 0.35);
+    background: repeating-linear-gradient(
+        180deg,
+        rgba(212, 145, 92, 0.35) 0px,
+        rgba(212, 145, 92, 0.35) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+}
+
+/* Cursor price tag — right edge, tracks horizontal crosshair */
+.crosshair-price {
+    position: absolute;
+    top: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 6;
+    opacity: 0;
+    transition: opacity 0.08s ease;
+    will-change: transform, opacity;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--accent);
+    color: var(--bg-void);
+    padding: 1px 6px;
+    border-radius: 2px;
+    transform-origin: right center;
+    /* Offset so the tag is vertically centered on the crosshair line */
+    margin-top: -9px;
+}
+
+/* ─── CHART TOOLBAR (bottom-left zoom/pan controls) ────────── */
+/* Lives inside .chart-area, above Plotly's SVG layers          */
+
+.chart-toolbar {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 1px;
+    background: var(--bg-void);
+    padding: 3px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease 0.4s backwards;
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.toolbar-btn:hover {
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+}
+
+.toolbar-btn.active {
+    color: var(--accent-text);
+    background: var(--accent-dim);
+    box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* Toggle-style button (MC, etc.) — uses green accent when active */
+.toolbar-toggle.active {
+    color: var(--buy);
+    background: var(--buy-dim);
+    box-shadow: 0 0 6px var(--buy-glow);
+}
+
+/* Thin separator between tool groups */
+.toolbar-sep {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px 3px;
+    background: var(--border);
+}
+
+/* ─── PLOTLY OVERRIDES ──────────────────────────────────────── */
+
+/* Hide default modebar — we use our own toolbar */
+.js-plotly-plot .plotly .modebar {
+    display: none !important;
+}
+
+/* Hover label theming */
+.js-plotly-plot .plotly .hoverlayer .hovertext rect {
+    fill: var(--bg-elevated) !important;
+    stroke: var(--border-accent) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Portfolio: add/edit/remove controls
+   ───────────────────────────────────────────────────────────────── */
+
+/* "+" button in the sidebar header */
+.add-stock-btn {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-text);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.add-stock-btn:hover {
+    background: var(--accent);
+    color: var(--bg-void);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Per-row edit/remove icons — hidden until hover */
+.stock-item-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: 6px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.stock-item:hover .stock-item-actions {
+    opacity: 1;
+}
+
+.stock-action-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    padding: 2px 5px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.stock-action-btn:hover {
+    background: var(--bg-elevated);
+    color: var(--accent-text);
+}
+
+.stock-action-remove:hover {
+    color: var(--sell);
+}
+
+/* Modals — shared styles for add and edit dialogs */
+.portfolio-modal {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px 28px;
+    min-width: 360px;
+    max-width: 480px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 24px var(--accent-dim);
+}
+
+.portfolio-modal::backdrop {
+    background: rgba(6, 6, 11, 0.75);
+}
+
+.portfolio-modal h3 {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    margin: 0 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.portfolio-modal h3 span {
+    color: var(--accent-text);
+    margin-left: 4px;
+}
+
+.portfolio-modal label {
+    display: block;
+    margin-bottom: 14px;
+}
+
+.portfolio-modal label span {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+}
+
+.portfolio-modal label.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.portfolio-modal label.checkbox span {
+    margin-bottom: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-weight: 400;
+}
+
+.portfolio-modal input[type="text"],
+.portfolio-modal input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.portfolio-modal input[type="text"]:focus,
+.portfolio-modal input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow);
+}
+
+.modal-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    min-height: 16px;
+    margin: 8px 0;
+    color: var(--text-dim);
+}
+
+.modal-status.pending { color: var(--accent-text); }
+.modal-status.ok      { color: var(--buy); }
+.modal-status.error   { color: var(--sell); }
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.modal-actions button {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid var(--border);
+}
+
+.modal-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.modal-cancel:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.modal-submit {
+    background: var(--accent);
+    color: var(--bg-void);
+    border-color: var(--accent);
+}
+
+.modal-submit:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ─── DISCOVERY MATRIX ─────────────────────────────────────────── */
+/* Button in header, bubble chart container, and detail card        */
+
+.discovery-toggle-btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 4px 10px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: color 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+
+.discovery-toggle-btn:hover {
+    color: var(--text-secondary);
+    border-color: var(--border-accent);
+}
+
+/* Active: phosphor glow — matches the "hot" amber pattern of the terminal */
+.discovery-toggle-btn.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(212, 145, 92, 0.2);
+}
+
+/* Container fills the chart-area column; z-index:2 clears the vignette overlay */
+.discovery-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.discovery-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.discovery-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.discovery-scan-date {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+}
+
+.discovery-legend {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+/* Plotly fills this div; crosshair signals precision interaction */
+.discovery-plot {
+    flex: 1;
+    min-height: 0;
+    cursor: crosshair;
+}
+
+/* ── Detail card ── */
+
+/* Slides in from slightly above — 150ms, no bounce */
+@keyframes dd-appear {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.discovery-detail {
+    position: absolute;
+    top: 48px;
+    right: 16px;
+    width: 240px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);  /* amber top border = active/hot panel */
+    border-radius: 4px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 1px rgba(212, 145, 92, 0.15);
+    animation: dd-appear 0.15s ease forwards;
+    overflow: hidden;
+}
+
+.dd-header {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dd-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.dd-ticker {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+}
+
+/* × close: pure opacity change, no animation — terminal precision */
+.dd-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.1s;
+}
+
+.dd-close:hover { color: var(--text-secondary); }
+
+.dd-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+.dd-conv {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dd-sep {
+    color: var(--text-dim);
+    font-size: 10px;
+}
+
+.dd-tier {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.dd-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Quadrant archetype label */
+.dd-quadrant-tag {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 4px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+}
+
+/* Party type label — color encodes signal quality */
+.dd-party-type {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 1px 4px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+}
+
+.dd-party-type.promoter    { color: var(--accent); }
+.dd-party-type.institution { color: var(--buy); }
+.dd-party-type.entity      { color: var(--text-muted); }
+
+.dd-body {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.dd-narrative {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.dd-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Pill chip for stage / RSI / RS data */
+.dd-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 2px 5px;
+}
+
+/* Price chip variant: amber tint */
+.dd-price {
+    color: var(--accent);
+    border-color: rgba(212, 145, 92, 0.3);
+}
+
+.dd-macro {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* Score breakdown rows */
+.dd-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+}
+
+.dd-score-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dd-score-key {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    width: 82px;
+    flex-shrink: 0;
+}
+
+/* Filled dots: amber. Empty dots: faded via .empty */
+.dd-score-dots {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+}
+
+.dd-score-dots .empty { opacity: 0.18; }
+
+.dd-recency {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+}

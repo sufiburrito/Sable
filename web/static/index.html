@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeCentral</title>
+
+    <!-- Fonts: Outfit for body (geometric, modern), JetBrains Mono for data -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Plotly.js from CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- ─── Top bar: MMI + branding ─── -->
+    <header id="header">
+        <div class="header-brand">
+            <span class="brand-name">TradeCentral</span>
+            <span class="brand-tag">workstation</span>
+        </div>
+        <div id="mmi-bar" class="mmi-bar">
+            <span class="mmi-loading">MMI loading...</span>
+        </div>
+        <div class="header-controls">
+            <button id="discovery-btn" class="discovery-toggle-btn">DISCOVERY</button>
+            <div class="timeframe-group" id="timeframe-group">
+                <button class="tf-btn" data-period="1d">1D</button>
+                <button class="tf-btn" data-period="5d">5D</button>
+                <button class="tf-btn active" data-period="1mo">1M</button>
+                <button class="tf-btn" data-period="3mo">3M</button>
+                <button class="tf-btn" data-period="6mo">6M</button>
+                <button class="tf-btn" data-period="1y">1Y</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ─── Main layout ─── -->
+    <div class="main-layout">
+        <!-- Left: Stock list -->
+        <aside id="stock-sidebar" class="stock-sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Watchlist</span>
+                <div class="focus-tabs" id="focus-tabs">
+                    <button class="focus-tab active" data-view="foreground" title="Foreground stocks (F)">FG</button>
+                    <button class="focus-tab" data-view="all" title="All stocks (A)">ALL</button>
+                    <button class="focus-tab" data-view="background" title="Background stocks (B)">BG</button>
+                </div>
+                <button id="add-stock-btn" class="add-stock-btn" title="Add ticker to portfolio">+</button>
+            </div>
+            <ul id="stock-list" class="stock-list">
+                <!-- Populated by JS -->
+            </ul>
+        </aside>
+
+        <!-- Center: Chart -->
+        <main class="chart-area">
+            <div id="discovery-container" class="discovery-container" style="display:none">
+                <div class="discovery-header">
+                    <span class="discovery-title">DISCOVERY MATRIX</span>
+                    <span id="discovery-scan-date" class="discovery-scan-date"></span>
+                    <span class="discovery-legend">bubble size = recency</span>
+                </div>
+                <div id="discovery-plot" class="discovery-plot"></div>
+            </div>
+            <div id="chart-header" class="chart-header">
+                <span id="chart-ticker" class="chart-ticker">Select a stock</span>
+                <span id="chart-price" class="chart-price"></span>
+                <span id="chart-belief" class="chart-belief"></span>
+                <span id="chart-regime" class="chart-regime"></span>
+                <span id="chart-sim-stats" class="chart-sim-stats"></span>
+            </div>
+            <div id="chart-container" class="chart-container">
+                <div class="chart-placeholder">Select a stock from the watchlist</div>
+            </div>
+        </main>
+
+        <!-- Right: Alert log -->
+        <aside class="alert-panel">
+            <div class="panel-header">Alert Log</div>
+            <div id="alert-log" class="alert-log">
+                <div class="alert-empty">No stock selected</div>
+            </div>
+            <div class="panel-header" style="margin-top: 12px;">Alert Levels</div>
+            <div id="alert-levels-list" class="alert-levels-list">
+                <!-- Populated by JS -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Alert popover is built dynamically by alerts.js -->
+
+    <!-- ─── Portfolio: add-ticker modal ─── -->
+    <dialog id="add-stock-modal" class="portfolio-modal">
+        <form method="dialog" id="add-stock-form">
+            <h3>Add Ticker to Portfolio</h3>
+            <label>
+                <span>NSE Ticker</span>
+                <input type="text" name="ticker" autocomplete="off" required
+                       pattern="[A-Za-z0-9&]{1,15}" placeholder="e.g. SUZLON">
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" name="queue_analysis" checked>
+                <span>Queue full analysis (recommended)</span>
+            </label>
+            <div id="add-stock-status" class="modal-status"></div>
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" value="cancel">Cancel</button>
+                <button type="submit" class="modal-submit">Add</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- ─── Portfolio: edit-identity modal ─── -->
+    <dialog id="edit-identity-modal" class="portfolio-modal">
+        <form method="dialog" id="edit-identity-form">
+            <h3>Edit <span id="edit-identity-ticker"></span></h3>
+            <label>
+                <span>Sector</span>
+                <input type="text" name="sector" autocomplete="off" required
+                       placeholder="e.g. Wind Energy / Renewable Energy">
+            </label>
+            <label>
+                <span>Core Position (%)</span>
+                <input type="number" name="core_pct" min="0" max="100" required>
+            </label>
+            <div id="edit-identity-status" class="modal-status"></div>
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" value="cancel">Cancel</button>
+                <button type="submit" class="modal-submit">Save</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="/static/js/chart.js"></script>
+    <script src="/static/js/alerts.js"></script>
+    <script src="/static/js/portfolio.js"></script>
+    <script src="/static/js/discovery.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
